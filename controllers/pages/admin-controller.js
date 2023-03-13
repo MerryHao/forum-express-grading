@@ -1,5 +1,5 @@
-const { Restaurant, User, Category } = require('../models')
-const { imgurFileHandler } = require('../helpers/file-helpers')
+const { Restaurant, User, Category } = require('../../models')
+const { imgurFileHandler } = require('../../helpers/file-helpers')
 const adminController = { // 修改這裡
   getRestaurants: (req, res, next) => {
     Restaurant.findAll({
@@ -119,7 +119,7 @@ const adminController = { // 修改這裡
         }
         return user.update({ isAdmin: !user.isAdmin })
       })
-      .then(()=>{
+      .then(() => {
         req.flash('success_messages', '使用者權限變更成功')
         res.redirect('/admin/users')
       })
