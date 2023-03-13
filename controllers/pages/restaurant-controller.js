@@ -1,47 +1,8 @@
 const { Restaurant, Category, Comment, User, Favorite } = require('../../models')
-const { getOffset, getPagination } = require('../../helpers/pagination-helper')
+const restaurantServices = require('../../services/restaurant-services')
 const restaurantController = {
-  getRestaurants: (req, res) => {
-    const DEFAULT_LIMIT = 9
-    const categoryId = Number(req.query.categoryId) || ''
-    const page = Number(req.query.page) || 1
-    const limit = Number(req.query.limit) || DEFAULT_LIMIT
-    const offset = getOffset(limit, page)
-    return Promise.all([
-      Restaurant.findAndCountAll({
-        include: Category, // 運用 include 一併拿出關聯的 Category model
-        where: {
-          ...categoryId ? { categoryId } : {} // 檢查categoryId是否為空值
-        },
-        limit,
-        offset,
-        nest: true,
-        raw: true
-      }),
-      Category.findAll({ raw: true })
-    ])
-    .then(([restaurants, categories]) => {
-      //console.log(restaurants)
-      const favoritedRestaurantsId = req.user && req.user.FavoritedRestaurants.map(fr => fr.id)
-      const LikedRestaurantsId = req.user && req.user.LikedRestaurants.map(lr => lr.id)
-      const data = restaurants.rows.map(r => ({
-        ...r,
-        description: r.description.substring(0, 50),
-        isFavorited: favoritedRestaurantsId.includes(r.id),
-        /** 
-         * 取出使用者的收藏清單，然後map成id清單，之後用Array的includes方法進行比對，最後會回傳布林值。
-         * 不過因為req.user可能是空的，謹慎起見我們要寫成 req.user && req.user.FavoritedRestaurants... 先做檢查。
-         * 整段程式碼的意思就是說要來看看現在這間餐廳是不是有被使用者收藏，有的話 isFavorited 就會是 true，否則會是 false。
-         **/
-        isLiked: LikedRestaurantsId.includes(r.id)
-      }))
-      return res.render('restaurants', {
-        restaurants: data,
-        categories,
-        categoryId,
-        pagination: getPagination(limit, page, restaurants.count)
-      })
-    })
+  getRestaurants: (req, res, next) => {
+    restaurantServices.getRestaurants(req, (err, data) => err ? next(err) : res.render('restaurants', data))
   },
   getRestaurant: (req, res, next) => {
     return Restaurant.findByPk(req.params.id, {
